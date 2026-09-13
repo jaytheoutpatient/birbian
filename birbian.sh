@@ -40,7 +40,7 @@ while [[ "${confirm}" != "y" && "${confirm}" != "yes" ]]; do
     read -r -p "Type 'y' to continue, anything else to abort: " confirm
 done
 
-required=(apt-get wget ca-certificates)
+required=(wget ca-certificates)
 echo ""
 echo "== Refreshing apt and installing prerequisites =="
 apt-get update -y
