@@ -33,7 +33,33 @@ apt-get update -y
 
 echo ""
 echo "== Installing PikaOS kernel (${KERNEL_META}) =="
-apt-get install -y "${KERNEL_META}"
+if ! apt-get install -y "${KERNEL_META}"; then
+    if apt-cache policy libssl4 2>/dev/null | grep -q 'Candidate: (none)'; then
+        echo ""
+        echo "Install failed because PikaOS 'scx' requires libssl4," >&2
+        echo "which is not available on Debian. Retrying with a pinned 'scx'" >&2
+        echo "version that links against Debian's libssl3t64 instead." >&2
+        SCX_PIN=""
+        while read -r ver; do
+            if ! apt-cache depends "scx=${ver}" 2>/dev/null | grep -qE '[^[:alnum:]]libssl4([^[:alnum:]]|$)'; then
+                SCX_PIN="${ver}"
+                break
+            fi
+        done < <(apt-cache policy scx 2>/dev/null | sed -n '/Version table:/,$p' | sed 's/^ *//' | cut -d' ' -f1 | grep -E '^[0-9]+\.[0-9]')
+        if [[ -z "${SCX_PIN}" ]]; then
+            echo "No usable 'scx' version found; giving up." >&2
+            exit 1
+        fi
+        echo ""
+        echo "== Installing PikaOS kernel with scx=${SCX_PIN} =="
+        apt-get install -y "scx=${SCX_PIN}" "${KERNEL_META}"
+        echo ""
+        echo "Tip: to keep scx pinned after future upgrades, run:"
+        echo "  printf 'Package: scx\\nPin: version ${SCX_PIN}\\nPin-Priority: 1001\\n' | sudo tee /etc/apt/preferences.d/scx-pin"
+    else
+        exit 1
+    fi
+fi
 
 if command -v update-grub >/dev/null 2>&1; then
     echo ""
