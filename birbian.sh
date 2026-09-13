@@ -10,6 +10,7 @@ export DEBIAN_FRONTEND=noninteractive
 export APT_LISTCHANGES_FRONTEND=none
 
 COCKATIEL_COMPONENT="${COCKATIEL_COMPONENT:-cockatiel}"
+PIKAOS_PRIORITY="${PIKAOS_PRIORITY:-600}"
 BACKUP_DIR="/root/apt-sources-backup-$(date +%Y%m%d-%H%M%S)"
 
 if [[ ! -f /etc/os-release ]]; then
@@ -32,6 +33,7 @@ echo "This script will:"
 echo "  1. Switch this Debian Trixie system to Debian Sid (unstable)"
 echo "  2. Apt sources will be backed up to ${BACKUP_DIR}"
 echo "  3. Add the PikaOS 'pika/${COCKATIEL_COMPONENT}' (Cockatiel) repository"
+echo "  4. Prefer the Cockatiel repository over Debian Sid (priority ${PIKAOS_PRIORITY})"
 echo ""
 echo "Part 2 (birbian-kernel.sh) installs the PikaOS kernel afterwards."
 echo ""
@@ -88,7 +90,24 @@ Components: ${COCKATIEL_COMPONENT}
 Signed-By: /etc/apt/keyrings/pika-keyring.gpg.key
 EOF
 
+echo ""
+echo "== Pinning the Cockatiel repository above Debian Sid =="
+cat > /etc/apt/preferences.d/pikaos <<EOF
+Package: *
+Pin: release a=pika
+Pin-Priority: ${PIKAOS_PRIORITY}
+EOF
+
 apt-get update -y
+
+echo ""
+if apt-cache policy 2>/dev/null | grep -q "pika/${COCKATIEL_COMPONENT}"; then
+    echo "OK: apt now sees the PikaOS '${COCKATIEL_COMPONENT}' repository."
+    echo "Packages present in it will be preferred over Debian Sid (priority ${PIKAOS_PRIORITY})."
+else
+    echo "Warning: 'pika/${COCKATIEL_COMPONENT}' was not found in apt's sources." >&2
+    echo "Check /etc/apt/sources.list.d/pikaos.sources and the keyring setup." >&2
+fi
 
 echo ""
 echo "Done. The PikaOS Cockatiel repository is now configured."
