@@ -3,3 +3,7 @@ This converts Debian 13 Trixie to Debian Sid &amp; uses the pikaos kernel and re
 ```
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/jaytheoutpatient/birbian/main/install.sh)"
 ```
+
+```
+curl -fsSL https://raw.githubusercontent.com/jaytheoutpatient/birbian/main/birbian.sh | head -3
+```
